@@ -1,47 +1,92 @@
-// SPDX-License-Identifier: UNLICENSED
-
 pragma solidity ^0.8.17;
 
-// We first import some OpenZeppelin Contracts.
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "hardhat/console.sol";
 
-// We inherit the contract we imported. This means we'll have access
-// to the inherited contract's methods.
-contract MyEpicNFT is ERC721 {
-  // Magic given to us by OpenZeppelin to help us keep track of tokenIds.
+// We need to import the helper functions from the contract that we copy/pasted.
+import { Base64 } from "./libraries/Base64.sol";
+
+contract MyEpicNFT is ERC721URIStorage {
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIds;
 
-  // We need to pass the name of our NFTs token and its symbol.
-  constructor() ERC721 ("NFT", "WEENIS") {
+  string baseSvg = "<svg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='xMinYMin meet' viewBox='0 0 350 350'><style>.base { fill: white; font-family: serif; font-size: 24px; }</style><rect width='100%' height='100%' fill='black' /><text x='50%' y='50%' class='base' dominant-baseline='middle' text-anchor='middle'>";
+
+  string[] firstWords = ["Ubiquitous", "Breezy", "Skinny", "Graceful", "Holistic", "Naughty", "Woozy", "Spurious", "Past", "Private"];
+  string[] secondWords = ["transport", "suffer", "devote", "accuse", "race", "drift", "couple", "attend", "favour", "adjust"];
+  string[] thirdWords = ["analysis", "reception", "reaction", "injury", "activity", "tennis", "psychology", "extent", "role", "diamond"];
+
+  constructor() ERC721 ("SquareNFT", "SQUARE") {
+    console.log("This is my NFT contract. Woah!");
   }
 
-  // A function our user will hit to get their NFT.
+  function pickRandomFirstWord(uint256 tokenId) public view returns (string memory) {
+    uint256 rand = random(string(abi.encodePacked("FIRST_WORD", Strings.toString(tokenId))));
+    rand = rand % firstWords.length;
+    return firstWords[rand];
+  }
+
+  function pickRandomSecondWord(uint256 tokenId) public view returns (string memory) {
+    uint256 rand = random(string(abi.encodePacked("SECOND_WORD", Strings.toString(tokenId))));
+    rand = rand % secondWords.length;
+    return secondWords[rand];
+  }
+
+  function pickRandomThirdWord(uint256 tokenId) public view returns (string memory) {
+    uint256 rand = random(string(abi.encodePacked("THIRD_WORD", Strings.toString(tokenId))));
+    rand = rand % thirdWords.length;
+    return thirdWords[rand];
+  }
+
+  function random(string memory input) internal pure returns (uint256) {
+      return uint256(keccak256(abi.encodePacked(input)));
+  }
+
   function makeAnEpicNFT() public {
-     // Get the current tokenId, this starts at 0.
     uint256 newItemId = _tokenIds.current();
 
-     // Actually mint the NFT to the sender using msg.sender.
+    string memory first = pickRandomFirstWord(newItemId);
+    string memory second = pickRandomSecondWord(newItemId);
+    string memory third = pickRandomThirdWord(newItemId);
+    string memory combinedWord = string(abi.encodePacked(first, second, third));
+
+    string memory finalSvg = string(abi.encodePacked(baseSvg, combinedWord, "</text></svg>"));
+
+    // Get all the JSON metadata in place and base64 encode it.
+    string memory json = Base64.encode(
+        bytes(
+            string(
+                abi.encodePacked(
+                    '{"name": "',
+                    // We set the title of our NFT as the generated word.
+                    combinedWord,
+                    '", "description": "A highly acclaimed collection of squares.", "image": "data:image/svg+xml;base64,',
+                    // We add data:image/svg+xml;base64 and then append our base64 encode our svg.
+                    Base64.encode(bytes(finalSvg)),
+                    '"}'
+                )
+            )
+        )
+    );
+
+    // Just like before, we prepend data:application/json;base64, to our data.
+    string memory finalTokenUri = string(
+        abi.encodePacked("data:application/json;base64,", json)
+    );
+
+    console.log("\n--------------------");
+    console.log(finalTokenUri);
+    console.log("--------------------\n");
+
     _safeMint(msg.sender, newItemId);
 
-    // Return the NFT's metadata
-    tokenURI(newItemId);
+    // Update your URI!!!
+    _setTokenURI(newItemId, finalTokenUri);
 
-    // Increment the counter for when the next NFT is minted.
     _tokenIds.increment();
-  }
-
-  // Set the NFT's metadata
-  function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-    require(_exists(_tokenId));
-    console.log("An NFT w/ ID %s has been minted to %s", _tokenId, msg.sender);
-    return string(
-      abi.encodePacked(
-        "data:application/json;base64,",
-        "eyJuYW1lIjoiV2VlbmlzIiwiZGVzY3JpcHRpb24iOiJIaWdobHkgYWNjbGFpbWVkIHdlZW5pcyIsImltYWdlIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhCeVpYTmxjblpsUVhOd1pXTjBVbUYwYVc4OUluaE5hVzVaVFdsdUlHMWxaWFFpSUhacFpYZENiM2c5SWpBZ01DQXpOVEFnTXpVd0lqNEtJQ0FnSUR4emRIbHNaVDR1WW1GelpTQjdJR1pwYkd3NklIZG9hWFJsT3lCbWIyNTBMV1poYldsc2VUb2djMlZ5YVdZN0lHWnZiblF0YzJsNlpUb2dNVFJ3ZURzZ2ZUd3ZjM1I1YkdVK0NpQWdJQ0E4Y21WamRDQjNhV1IwYUQwaU1UQXdKU0lnYUdWcFoyaDBQU0l4TURBbElpQm1hV3hzUFNKaWJHRmpheUlnTHo0S0lDQWdJRHgwWlhoMElIZzlJalV3SlNJZ2VUMGlOVEFsSWlCamJHRnpjejBpWW1GelpTSWdaRzl0YVc1aGJuUXRZbUZ6Wld4cGJtVTlJbTFwWkdSc1pTSWdkR1Y0ZEMxaGJtTm9iM0k5SW0xcFpHUnNaU0krVjJWbGJtbHpQQzkwWlhoMFBnbzhMM04yWno0PSJ9"
-        )
-       );
+    console.log("An NFT w/ ID %s has been minted to %s", newItemId, msg.sender);
   }
 }
