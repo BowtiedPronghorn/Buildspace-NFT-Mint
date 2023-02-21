@@ -15,8 +15,7 @@ contract MyEpicNFT is ERC721 {
   Counters.Counter private _tokenIds;
 
   // We need to pass the name of our NFTs token and its symbol.
-  constructor() ERC721 ("SquareNFT", "SQUARE") {
-    console.log("This is my NFT contract. Woah!");
+  constructor() ERC721 ("NFT", "WEENIS") {
   }
 
   // A function our user will hit to get their NFT.
@@ -38,6 +37,11 @@ contract MyEpicNFT is ERC721 {
   function tokenURI(uint256 _tokenId) public view override returns (string memory) {
     require(_exists(_tokenId));
     console.log("An NFT w/ ID %s has been minted to %s", _tokenId, msg.sender);
-    return "https://www.jsonkeeper.com/b/OICK";
+    return string(
+      abi.encodePacked(
+        "data:application/json;base64,",
+        "eyJuYW1lIjoiV2VlbmlzIiwiZGVzY3JpcHRpb24iOiJIaWdobHkgYWNjbGFpbWVkIHdlZW5pcyIsImltYWdlIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhCeVpYTmxjblpsUVhOd1pXTjBVbUYwYVc4OUluaE5hVzVaVFdsdUlHMWxaWFFpSUhacFpYZENiM2c5SWpBZ01DQXpOVEFnTXpVd0lqNEtJQ0FnSUR4emRIbHNaVDR1WW1GelpTQjdJR1pwYkd3NklIZG9hWFJsT3lCbWIyNTBMV1poYldsc2VUb2djMlZ5YVdZN0lHWnZiblF0YzJsNlpUb2dNVFJ3ZURzZ2ZUd3ZjM1I1YkdVK0NpQWdJQ0E4Y21WamRDQjNhV1IwYUQwaU1UQXdKU0lnYUdWcFoyaDBQU0l4TURBbElpQm1hV3hzUFNKaWJHRmpheUlnTHo0S0lDQWdJRHgwWlhoMElIZzlJalV3SlNJZ2VUMGlOVEFsSWlCamJHRnpjejBpWW1GelpTSWdaRzl0YVc1aGJuUXRZbUZ6Wld4cGJtVTlJbTFwWkdSc1pTSWdkR1Y0ZEMxaGJtTm9iM0k5SW0xcFpHUnNaU0krVjJWbGJtbHpQQzkwWlhoMFBnbzhMM04yWno0PSJ9"
+        )
+       );
   }
 }
